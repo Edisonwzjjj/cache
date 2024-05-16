@@ -2,7 +2,7 @@ package LRU
 
 import "container/list"
 
-type Cache struct {
+type LruCache struct {
 	maxBytes  int64
 	nBytes    int64
 	ll        *list.List
@@ -19,8 +19,8 @@ type Value interface {
 	Len() int
 }
 
-func newCache(maxBytes int64, onEvicted func(key string, value Value)) *Cache {
-	return &Cache{
+func NewCache(maxBytes int64, onEvicted func(key string, value Value)) *LruCache {
+	return &LruCache{
 		maxBytes:  maxBytes,
 		nBytes:    0,
 		ll:        list.New(),
@@ -29,7 +29,7 @@ func newCache(maxBytes int64, onEvicted func(key string, value Value)) *Cache {
 	}
 }
 
-func (c *Cache) Get(key string) (value Value, ok bool) {
+func (c *LruCache) Get(key string) (value Value, ok bool) {
 	if e, ok := c.cache[key]; ok {
 		c.ll.MoveToFront(e)
 		kv := e.Value.(*entry)
@@ -38,7 +38,7 @@ func (c *Cache) Get(key string) (value Value, ok bool) {
 	return
 }
 
-func (c *Cache) removeOldest() {
+func (c *LruCache) removeOldest() {
 	e := c.ll.Back()
 	if e == nil {
 		return
@@ -52,7 +52,7 @@ func (c *Cache) removeOldest() {
 	}
 }
 
-func (c *Cache) Put(key string, value Value) {
+func (c *LruCache) Put(key string, value Value) {
 	if e, ok := c.cache[key]; ok {
 		c.ll.MoveToFront(e)
 		kv := e.Value.(*entry)
@@ -72,6 +72,6 @@ func (c *Cache) Put(key string, value Value) {
 		c.removeOldest()
 	}
 }
-func (c *Cache) Len() int {
+func (c *LruCache) Len() int {
 	return c.ll.Len()
 }
