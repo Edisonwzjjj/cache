@@ -25,6 +25,14 @@ type Group struct {
 	name      string
 	getter    Getter
 	mainCache Cache
+	peers     PeerPicker
+}
+
+func (g *Group) registerPeers(peer PeerPicker) {
+	if g.peers != nil {
+		panic("RegisterPeerPicker called more than once")
+	}
+	g.peers = peer
 }
 
 func NewGroup(name string, cacheBytes int64, getter Getter) *Group {
@@ -63,8 +71,25 @@ func (g *Group) Get(key string) (ByteView, error) {
 	return g.Load(key)
 }
 
-func (g *Group) Load(key string) (ByteView, error) {
+func (g *Group) Load(key string) (value ByteView, err error) {
+	if g.peers != nil {
+		if peer, ok := g.peers.PeerPick(key); ok {
+			if value, err := g.getFromPeer(key, peer); err == nil {
+				return value, nil
+			}
+			log.Println("[GeeCache] Failed to get from peer", err)
+		}
+	}
+
 	return g.GetLocally(key)
+}
+
+func (g *Group) getFromPeer(key string, peer PeerGetter) (value ByteView, err error) {
+	bytes, err := peer.Get(g.name, key)
+	if err != nil {
+		return ByteView{}, nil
+	}
+	return ByteView{b: bytes}, nil
 }
 
 func (g *Group) GetLocally(key string) (ByteView, error) {
