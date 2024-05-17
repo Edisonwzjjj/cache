@@ -1,9 +1,11 @@
-package cache
+package geecache
+
+import pb "cache/geecache/geecachepb"
 
 type PeerPicker interface {
 	PeerPick(key string) (peer PeerGetter, ok bool)
 }
 
 type PeerGetter interface {
-	Get(group string, key string) ([]byte, error)
+	Get(in *pb.Request, out *pb.Response) error
 }
